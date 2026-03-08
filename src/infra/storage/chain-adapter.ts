@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+
 export type ChainBackend = 'ts-legacy' | 'rust-napi';
 
 export interface ChainAdapterStatus {
@@ -25,8 +27,8 @@ function getRustBridgePath(rawEnv: NodeJS.ProcessEnv): string {
 function tryLoadRustBridge(rustBridgePath: string): RustBridgeLike | null {
   try {
     // Dynamic load to keep default path non-breaking when rust bridge is absent.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const mod = require(rustBridgePath) as RustBridgeLike;
+    const req = createRequire(`${process.cwd()}/`);
+    const mod = req(rustBridgePath) as RustBridgeLike;
     return mod;
   } catch {
     return null;
