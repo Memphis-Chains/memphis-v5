@@ -2,7 +2,18 @@ Real-deal.
 
 # memphis-v4
 
-Production-first, basic-but-working foundation for Memphis v4.
+Production-first Memphis v4 foundation.
+
+Status:
+- Public baseline release: `v0.1.0`
+- Current track: BLUEPRINT Phase 0 execution (`ROADMAP-V0.2.0-BLUEPRINT-P0.md`)
+- Operating mode: quality-first, no rushed shortcuts
+
+## Why this exists
+`memphis-v4` is the clean codebase line for the next generation Memphis architecture:
+- TypeScript shell
+- Rust core entry (workspace + core + NAPI bridge)
+- Safe migration path via feature-flag fallback
 
 ## Quick start
 ```bash
@@ -11,16 +22,7 @@ cp .env.example .env
 npm run dev
 ```
 
-## Scripts
-- `npm run dev` — run local entrypoint
-- `npm run typecheck` — TypeScript checks
-- `npm run lint` — ESLint
-- `npm test` — Vitest
-- `npm run build` — compile to `dist/`
-
 ## Quality gate (required before push)
-Run all commands and push only when all pass:
-
 ```bash
 npm run lint
 npm run typecheck
@@ -28,12 +30,28 @@ npm test
 npm run build
 ```
 
-## Release quick path
-See: `docs/RELEASE-PROCESS.md`
+With Rust workspace enabled, also run:
+```bash
+cargo test --workspace
+```
 
-## Working mode
-See: `WORKING-AGREEMENT.md` (quality-first, source-of-truth, release discipline)
+## Release
+Follow deterministic release flow:
+- `docs/RELEASE-PROCESS.md`
 
-## Current phase
-Baseline published (`v0.1.0`).
-Current execution track: `ROADMAP-V0.1.1.md`.
+## Roadmaps
+- `ROADMAP-V0.1.1.md` — reliability/documentation hardening
+- `ROADMAP-V0.2.0-BLUEPRINT-P0.md` — Rust/NAPI Phase 0 execution
+- `docs/BLUEPRINT-GAP-ANALYSIS.md` — blueprint target vs current state
+
+## Working agreement
+- `WORKING-AGREEMENT.md`
+
+## Current key docs
+- `docs/NAPI-CONTRACT-V1.md`
+- `docs/V0.2.0-RC-CHECKLIST.md`
+
+## Security notes
+- Never commit secrets.
+- Keep `.env` local only.
+- Prefer short-lived PAT tokens with minimal scopes.
