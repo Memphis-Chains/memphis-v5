@@ -1,0 +1,91 @@
+# IMPLEMENTATION PROGRESS
+
+## Iteration #1
+
+- [x] A1: HTTP server bootstrap + `GET /health`
+  - Fastify server added (`src/infra/http/server.ts`)
+  - Bootstrap wired (`src/app/bootstrap.ts`, `src/index.ts`)
+  - Smoke check PASS: `GET /health` -> `{status:"ok",service:"memphis-v4",version:"0.1.0"}`
+- [x] A2: Config loader + schema validation (startup fail-fast)
+  - `src/infra/config/schema.ts` (Zod schema + conditional provider requirements)
+  - `src/infra/config/env.ts` (`loadConfig()` fail-fast with readable validation errors)
+  - Bootstrap wired to config (`HOST`, `PORT`)
+- [x] A3: Logger init + requestId middleware
+  - Logger module added (`src/infra/logging/logger.ts`, pino JSON logs)
+  - Fastify wired with `loggerInstance`, `genReqId`, `x-request-id` echo header
+  - `/health` now returns `requestId` for traceability
+- [x] B1: LLMProvider contract (final TS)
+  - Core types added (`src/core/types.ts`)
+  - Final provider contract added (`src/core/contracts/llm-provider.ts`)
+  - Baseline reference implementation added (`src/providers/local-fallback/adapter.ts`)
+- [x] B2: Orchestration service
+  - Added orchestration module (`src/modules/orchestration/service.ts`)
+  - Provider resolution (`auto` -> default) + generate flow
+  - Providers health aggregation via `Promise.allSettled`
+  - Unit tests added (`tests/unit/orchestration.service.test.ts`)
+- [x] B3: Unified domain errors + HTTP mapping
+  - Added `AppError` and shared error codes (`src/core/errors.ts`)
+  - Added Fastify error handler with unified response contract (`src/infra/http/error-handler.ts`)
+  - Server wired with `setErrorHandler(...)`
+  - Unit tests added (`tests/unit/errors.test.ts`)
+- [x] C1: shared-llm adapter
+  - Added shared client (`src/providers/shared-llm/client.ts`) with timeout/rate-limit/unavailable mapping
+  - Added provider adapter (`src/providers/shared-llm/adapter.ts`) to unified contract
+  - Unit test added (`tests/unit/shared-llm.adapter.test.ts`)
+- [x] C2: local-fallback adapter
+  - Adapter hardened + explicit unit test (`tests/unit/local-fallback.adapter.test.ts`)
+- [x] C3: providers health endpoint
+  - App container wiring added (`src/app/container.ts`)
+  - Endpoint added: `GET /v1/providers/health`
+  - Smoke PASS: returns default provider + providers statuses
+- [x] D1: POST /v1/chat/generate + validation
+  - Route added (`src/infra/http/routes/chat.ts`)
+  - Zod validation wired with unified `VALIDATION_ERROR`
+  - Server route registration updated
+  - Smoke PASS for valid + invalid payloads
+- [x] D2: response contract
+  - Added HTTP response schemas (`src/infra/http/contracts.ts`)
+  - `POST /v1/chat/generate` now validates outgoing contract before return
+  - Unit tests added for contracts (`tests/unit/http-contracts.test.ts`)
+- [x] D3: retry/fallback wiring
+  - Orchestrator now supports retry (exp backoff + jitter) for retryable provider errors
+  - Fallback provider wiring added (`fallbackProvider: local-fallback`)
+  - Retry/fallback unit test added (`tests/unit/orchestration.retry-fallback.test.ts`)
+- [x] E1: CLI health
+  - CLI entrypoint added (`src/infra/cli/index.ts`)
+  - `health` command implemented with `--json` support
+  - package script added: `npm run cli -- <command>`
+  - Unit test added (`tests/unit/cli.health.test.ts`)
+- [x] E2: CLI providers:health
+  - Implemented in CLI (`providers:health`)
+  - Reuses app container + orchestration health aggregation
+  - Unit test added (`tests/unit/cli.providers-health.test.ts`)
+- [x] E3: CLI chat
+  - Implemented `chat --input ... [--provider ...] [--model ...] [--json]`
+  - Human-readable + JSON output modes
+  - Input guard (`--input` required)
+  - Unit tests added (`tests/unit/cli.chat.test.ts`)
+- [x] F1: SQLite bootstrap
+  - SQLite client added (`src/infra/storage/sqlite/client.ts`)
+  - Initial schema migration added (`_meta`, `sessions`, `generation_events`)
+  - Unit test added (`tests/unit/sqlite.bootstrap.test.ts`)
+- [x] F2: session repository
+  - Repository contract added (`src/core/contracts/repository.ts`)
+  - SQLite session repository implemented (`src/infra/storage/sqlite/repositories/session-repository.ts`)
+  - Unit test added (`tests/unit/session-repository.test.ts`)
+- [x] F3: metadata persistence
+  - Generation event repository added (`src/infra/storage/sqlite/repositories/generation-event-repository.ts`)
+  - Chat route now persists generation metadata (`sessionId`, `providerUsed`, `timingMs`, `requestId`)
+  - App container wires SQLite + repositories at runtime
+  - Unit test added (`tests/unit/generation-event-repository.test.ts`)
+  - Smoke DB verification PASS
+- [x] G1: unit tests
+  - Added config fail-fast unit tests (`tests/unit/config.load.test.ts`)
+  - Full unit suite green
+- [x] G2: integration tests
+  - Added HTTP e2e/integration tests (`tests/integration/http.e2e.test.ts`)
+  - Verified health/providers/chat + metadata persistence path
+- [x] G3: release hardening
+  - Added release checklist (`docs/RELEASE-CHECKLIST.md`)
+  - Added release smoke script (`scripts/release-smoke.sh`, `npm run release:smoke`)
+  - Build + secret scan verified

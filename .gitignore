@@ -1,0 +1,20 @@
+node_modules/
+dist/
+coverage/
+.env.local
+.env.*.local
+*.secret
+*.log
+.DS_Store
+
+# internal backups / VCS snapshots
+.git.backup*
+.memphis-intake/backups/
+
+# local databases
+*.db
+*.db-shm
+*.db-wal
+
+dump---*.zip
+.memphis-intake/

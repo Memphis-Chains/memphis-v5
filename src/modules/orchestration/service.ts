@@ -1,0 +1,128 @@
+import { AppError } from '../../core/errors.js';
+import type { LLMProvider } from '../../core/contracts/llm-provider.js';
+import type { GenerateInput, GenerateResult, ProviderName } from '../../core/types.js';
+import { metrics } from '../../infra/logging/metrics.js';
+import { ProviderPolicy } from './provider-policy.js';
+
+export type OrchestratorDeps = {
+  defaultProvider: ProviderName;
+  providers: LLMProvider[];
+  fallbackProvider?: ProviderName;
+  maxRetries?: number;
+  providerCooldownMs?: number;
+};
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryable(error: unknown): boolean {
+  if (!(error instanceof AppError)) return false;
+  return (
+    error.code === 'PROVIDER_TIMEOUT' ||
+    error.code === 'PROVIDER_UNAVAILABLE' ||
+    error.code === 'PROVIDER_RATE_LIMIT'
+  );
+}
+
+export class OrchestrationService {
+  private readonly providers = new Map<ProviderName, LLMProvider>();
+  private readonly maxRetries: number;
+  private readonly providerPolicy: ProviderPolicy;
+
+  constructor(private readonly deps: OrchestratorDeps) {
+    for (const provider of deps.providers) {
+      this.providers.set(provider.name, provider);
+    }
+    this.maxRetries = deps.maxRetries ?? 2;
+    this.providerPolicy = new ProviderPolicy(deps.providerCooldownMs ?? 30_000);
+  }
+
+  public resolveProvider(requested?: 'auto' | ProviderName): LLMProvider {
+    const providerName = requested && requested !== 'auto' ? requested : this.deps.defaultProvider;
+    const provider = this.providers.get(providerName);
+
+    if (!provider) {
+      throw new AppError('PROVIDER_UNAVAILABLE', `Provider not configured: ${providerName}`, 503);
+    }
+
+    if (this.providerPolicy.isInCooldown(providerName)) {
+      throw new AppError('PROVIDER_UNAVAILABLE', `Provider in cooldown: ${providerName}`, 503, {
+        remainingCooldownMs: this.providerPolicy.remainingCooldownMs(providerName),
+      });
+    }
+
+    return provider;
+  }
+
+  private async tryGenerateWithRetry(provider: LLMProvider, input: GenerateInput): Promise<GenerateResult> {
+    let attempt = 0;
+    let lastError: unknown;
+
+    while (attempt <= this.maxRetries) {
+      try {
+        const started = Date.now();
+        const out = await provider.generate(input);
+        metrics.recordProviderCall(provider.name, true, Date.now() - started);
+        this.providerPolicy.markSuccess(provider.name);
+        return out;
+      } catch (error) {
+        metrics.recordProviderCall(provider.name, false, 0);
+        this.providerPolicy.markFailure(provider.name);
+        lastError = error;
+        if (!isRetryable(error) || attempt === this.maxRetries) {
+          break;
+        }
+
+        const backoffMs = Math.min(300 * 2 ** attempt + Math.floor(Math.random() * 100), 2000);
+        await sleep(backoffMs);
+        attempt += 1;
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new AppError('INTERNAL_ERROR', 'Unknown generate error', 500);
+  }
+
+  public async generate(input: GenerateInput & { provider?: 'auto' | ProviderName }): Promise<GenerateResult> {
+    let primary: LLMProvider | undefined;
+
+    try {
+      primary = this.resolveProvider(input.provider);
+      return await this.tryGenerateWithRetry(primary, input);
+    } catch (primaryError) {
+      const fallbackName = this.deps.fallbackProvider;
+      if (!fallbackName) {
+        throw primaryError;
+      }
+
+      const fallback = this.providers.get(fallbackName);
+      if (!fallback) {
+        throw primaryError;
+      }
+
+      if (primary && fallback.name === primary.name) {
+        throw primaryError;
+      }
+
+      return this.tryGenerateWithRetry(fallback, input);
+    }
+  }
+
+  public async providersHealth() {
+    const providerList = [...this.providers.values()];
+    const checks = await Promise.allSettled(providerList.map((provider) => provider.healthCheck()));
+
+    return checks.map((result, idx) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      }
+
+      const provider = providerList[idx];
+      return {
+        name: provider.name,
+        ok: false,
+        error: result.reason instanceof Error ? result.reason.message : 'Unknown provider error',
+      };
+    });
+  }
+}
