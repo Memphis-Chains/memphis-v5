@@ -40,6 +40,7 @@ import {
   verifyVaultEntry,
 } from '../storage/vault-entry-store.js';
 import { registerChatRoutes } from './routes/chat.js';
+import { registerMemoryRoutes } from './routes/memory.js';
 
 const SAFE_CHAIN_NAME = /^[A-Za-z0-9_-]{1,64}$/;
 const SENSITIVE_EXACT_ROUTES = new Set<string>([
@@ -366,6 +367,7 @@ export function createHttpServer(
   });
 
   registerChatRoutes(app, orchestration, repos);
+  registerMemoryRoutes(app);
 
   app.post<{ Body: unknown }>('/api/model-d/proposals', async (request, reply) => {
     const parsed = modelDProposalSchema.safeParse(request.body);
