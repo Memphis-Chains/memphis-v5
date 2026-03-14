@@ -31,6 +31,103 @@ function makeConfig(): AppConfig {
 }
 
 describe('HTTP e2e', () => {
+  it('accepts model-d proposal payload and returns deterministic vote', async () => {
+    delete process.env.MEMPHIS_API_TOKEN;
+    const config = makeConfig();
+    const container = createAppContainer(config);
+    const app = createHttpServer(config, container.orchestration, {
+      sessionRepository: container.sessionRepository,
+      generationEventRepository: container.generationEventRepository,
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/model-d/proposals',
+      payload: {
+        protocol: 'memphis-model-d/v1',
+        from: { id: 'peer-agent-a', name: 'Peer A' },
+        proposal: {
+          id: 'proposal-sec-1',
+          title: 'Run security hardening sweep',
+          description: 'Increase audit coverage and tighten access controls.',
+          proposer: 'peer-agent-a',
+          type: 'strategic',
+          status: 'voting',
+          createdAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.ok).toBe(true);
+    expect(body.protocol).toBe('memphis-model-d/v1');
+    expect(body.vote.choice).toBe('approve');
+    expect(typeof body.vote.reason).toBe('string');
+
+    await app.close();
+  });
+
+  it('rejects invalid model-d proposal payload', async () => {
+    delete process.env.MEMPHIS_API_TOKEN;
+    const config = makeConfig();
+    const container = createAppContainer(config);
+    const app = createHttpServer(config, container.orchestration, {
+      sessionRepository: container.sessionRepository,
+      generationEventRepository: container.generationEventRepository,
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/model-d/proposals',
+      payload: {
+        protocol: 'wrong-protocol',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ ok: false });
+
+    await app.close();
+  });
+
+  it('rejects model-d proposal targeted to a different local agent id', async () => {
+    delete process.env.MEMPHIS_API_TOKEN;
+    process.env.MEMPHIS_MODEL_D_AGENT_ID = 'local-agent-1';
+    const config = makeConfig();
+    const container = createAppContainer(config);
+    const app = createHttpServer(config, container.orchestration, {
+      sessionRepository: container.sessionRepository,
+      generationEventRepository: container.generationEventRepository,
+    });
+    try {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/model-d/proposals',
+        payload: {
+          protocol: 'memphis-model-d/v1',
+          from: { id: 'peer-agent-a' },
+          to: { id: 'some-other-agent' },
+          proposal: {
+            id: 'proposal-routing-1',
+            title: 'Operational sync',
+            description: 'Apply routine operations sync.',
+            proposer: 'peer-agent-a',
+            type: 'operational',
+            status: 'voting',
+            createdAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toMatchObject({ ok: false });
+    } finally {
+      await app.close();
+      delete process.env.MEMPHIS_MODEL_D_AGENT_ID;
+    }
+  });
+
   it('rejects traversal-style chain names on /api/journal', async () => {
     delete process.env.MEMPHIS_API_TOKEN;
     const config = makeConfig();
