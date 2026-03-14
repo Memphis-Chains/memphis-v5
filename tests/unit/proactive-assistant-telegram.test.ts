@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ProactiveAssistant, type ProactiveMessage } from '../../src/cognitive/proactive-assistant.js';
+import {
+  ProactiveAssistant,
+  type ProactiveMessage,
+} from '../../src/cognitive/proactive-assistant.js';
 import type { IStore } from '../../src/cognitive/store.js';
 
 function createStore(): IStore {

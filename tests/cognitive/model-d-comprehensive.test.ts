@@ -182,7 +182,11 @@ describe('Model D — comprehensive', () => {
       requestTimeoutMs: 1000,
     });
 
-    const proposal = await coordinator.proposeToNetwork('Remote vote', 'Broadcast test', 'tactical');
+    const proposal = await coordinator.proposeToNetwork(
+      'Remote vote',
+      'Broadcast test',
+      'tactical',
+    );
     const broadcasts = coordinator.getLastBroadcastResults();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);

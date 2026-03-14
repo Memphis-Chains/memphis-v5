@@ -491,7 +491,9 @@ export class AgentCoordinator {
   ): Promise<Proposal> {
     const proposal = this.modelD.propose(title, description, this.localAgent.id, type);
     const results = await Promise.all(
-      Array.from(this.remoteAgents.values()).map((agent) => this.broadcastProposal(agent, proposal)),
+      Array.from(this.remoteAgents.values()).map((agent) =>
+        this.broadcastProposal(agent, proposal),
+      ),
     );
     this.lastBroadcast = results;
 
@@ -584,7 +586,10 @@ export class AgentCoordinator {
     };
   }
 
-  private async broadcastProposal(agent: AgentConfig, proposal: Proposal): Promise<BroadcastResult> {
+  private async broadcastProposal(
+    agent: AgentConfig,
+    proposal: Proposal,
+  ): Promise<BroadcastResult> {
     if (!/^https?:\/\//i.test(agent.endpoint)) {
       return {
         agentId: agent.id,
@@ -668,16 +673,14 @@ export class AgentCoordinator {
       return null;
     }
 
-    const payload = (await response.json()) as
-      | {
-          vote?: {
-            choice?: string;
-            reason?: string;
-          };
-          choice?: string;
-          reason?: string;
-        }
-      | null;
+    const payload = (await response.json()) as {
+      vote?: {
+        choice?: string;
+        reason?: string;
+      };
+      choice?: string;
+      reason?: string;
+    } | null;
     if (!payload || typeof payload !== 'object') return null;
 
     const votePayload = payload.vote ?? payload;

@@ -50,7 +50,9 @@ function sortByTimestamp(blocks: Block[]): Block[] {
   );
 }
 
-export async function loadBlocksForPeriod(period: InsightCommandOptions['period']): Promise<Block[]> {
+export async function loadBlocksForPeriod(
+  period: InsightCommandOptions['period'],
+): Promise<Block[]> {
   const plan = PERIOD_PLANS[normalizePeriod(period)];
   const [journal, decision, reflections] = await Promise.all([
     getRecentBlocks('journal', plan.journal),

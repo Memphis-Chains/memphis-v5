@@ -377,18 +377,21 @@ export class ProactiveAssistant {
       `🤖 Proactive Assistant started (interval: ${this.config.checkIntervalMinutes}min)`,
     );
 
-    return setInterval(async () => {
-      try {
-        const messages = await this.check();
+    return setInterval(
+      async () => {
+        try {
+          const messages = await this.check();
 
-        if (messages.length > 0) {
-          console.log(`📬 Generated ${messages.length} proactive message(s)`);
-          await this.deliverMessages(messages);
+          if (messages.length > 0) {
+            console.log(`📬 Generated ${messages.length} proactive message(s)`);
+            await this.deliverMessages(messages);
+          }
+        } catch (error) {
+          console.error('❌ Proactive Assistant check failed', error);
         }
-      } catch (error) {
-        console.error('❌ Proactive Assistant check failed', error);
-      }
-    }, this.config.checkIntervalMinutes * 60 * 1000);
+      },
+      this.config.checkIntervalMinutes * 60 * 1000,
+    );
   }
 
   /**
@@ -464,12 +467,10 @@ export class ProactiveAssistant {
         return { ok: false, error: `HTTP ${response.status}` };
       }
 
-      const payload = (await response.json().catch(() => null)) as
-        | {
-            ok?: boolean;
-            description?: string;
-          }
-        | null;
+      const payload = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        description?: string;
+      } | null;
       if (payload && payload.ok === false) {
         return { ok: false, error: payload.description ?? 'Telegram API rejected request' };
       }
