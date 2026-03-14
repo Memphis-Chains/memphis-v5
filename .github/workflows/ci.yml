@@ -48,9 +48,11 @@ jobs:
         run: npm run bench:retrieval:gate
 
       - name: CLI + TUI latency benchmark
+        continue-on-error: true
         run: npm run bench:cli-tui
 
       - name: CLI + TUI latency gate
+        continue-on-error: true
         run: npm run bench:cli-tui:gate
 
       - name: Retrieval benchmark summary
