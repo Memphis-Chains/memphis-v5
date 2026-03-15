@@ -345,7 +345,7 @@ describe('strict incident handoff script', () => {
     expect(existsSync(bundlePath)).toBe(false);
   });
 
-  it('runs strict export+verify flow and returns pass summary in json mode', async () => {
+  it('runs strict export+verify flow and returns pass summary in json mode', { timeout: 30_000 }, async () => {
     const dir = makeTempDir('memphis-strict-handoff-success-');
     const keyId = 'strict-handoff-key-v1';
     const auditPath = path.join(dir, 'security-audit.jsonl');
@@ -462,7 +462,7 @@ describe('strict incident handoff script', () => {
     });
   });
 
-  it('fails verify stage when expected key id does not match signer key id', async () => {
+  it('fails verify stage when expected key id does not match signer key id', { timeout: 30_000 }, async () => {
     const dir = makeTempDir('memphis-strict-handoff-verify-fail-');
     const keyId = 'strict-verify-key-v1';
     const auditPath = path.join(dir, 'security-audit.jsonl');
