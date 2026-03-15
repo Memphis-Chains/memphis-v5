@@ -111,10 +111,16 @@ export function runMigrations(db: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_dual_approval_idempotency_request
       ON dual_approval_idempotency(request_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS tool_permissions (
+      tool_name TEXT PRIMARY KEY,
+      policy TEXT NOT NULL CHECK (policy IN ('allow', 'deny', 'require-approval')),
+      updated_at TEXT NOT NULL
+    );
   `);
 
   db.prepare(
-    `INSERT INTO _meta(key, value) VALUES ('schema_version', '1')
+    `INSERT INTO _meta(key, value) VALUES ('schema_version', '2')
      ON CONFLICT(key) DO UPDATE SET value=excluded.value`,
   ).run();
 }
