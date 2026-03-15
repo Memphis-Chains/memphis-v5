@@ -63,6 +63,7 @@ src/gateway/loop.ts → DEFAULT_SYSTEM_PROMPT (line 13)
 ```
 
 **Default (minimal):**
+
 ```
 You are OpenClaw, a personal AI assistant. You run on the user's own device
 and speak to them on the channels they already use. You have access to their
@@ -134,17 +135,18 @@ OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3.5:2b
 ```
 
-| Model | RAM | Quality / Jakość | Speed / Szybkość | Best for / Najlepsze do |
-|---|---|---|---|---|
-| `qwen3.5:2b` | 2 GB | Basic conversations | Fast | Testing, light chat |
-| `qwen2.5:7b` | 5 GB | Good quality | Medium | Daily use |
-| `qwen2.5:14b` | 10 GB | High quality | Slower | Detailed conversations |
-| `qwen2.5:32b` | 20 GB | Very high | Slow | Complex reasoning |
-| `llama3.1:8b` | 6 GB | Good, English-focused | Medium | English conversations |
-| `mistral:7b` | 5 GB | Good multilingual | Medium | European languages |
-| `gemma2:9b` | 7 GB | Good quality | Medium | General use |
+| Model         | RAM   | Quality / Jakość      | Speed / Szybkość | Best for / Najlepsze do |
+| ------------- | ----- | --------------------- | ---------------- | ----------------------- |
+| `qwen3.5:2b`  | 2 GB  | Basic conversations   | Fast             | Testing, light chat     |
+| `qwen2.5:7b`  | 5 GB  | Good quality          | Medium           | Daily use               |
+| `qwen2.5:14b` | 10 GB | High quality          | Slower           | Detailed conversations  |
+| `qwen2.5:32b` | 20 GB | Very high             | Slow             | Complex reasoning       |
+| `llama3.1:8b` | 6 GB  | Good, English-focused | Medium           | English conversations   |
+| `mistral:7b`  | 5 GB  | Good multilingual     | Medium           | European languages      |
+| `gemma2:9b`   | 7 GB  | Good quality          | Medium           | General use             |
 
 **Pull a model / Pobierz model:**
+
 ```bash
 ollama pull qwen2.5:7b
 ```
@@ -198,6 +200,7 @@ GLM_MODEL=glm-4-flash
 5. Open your bot in Telegram and say hello / Otwórz bota w Telegramie i się przywitaj
 
 **Available commands / Dostępne komendy:**
+
 - `/start` — Introduction / Powitanie
 - `/help` — Command list / Lista komend
 - `/status` — System status (model, memory, gateway)
@@ -276,14 +279,14 @@ Jeśli Memphis nie działa, OpenClaw nadal działa — rozmowy są po prostu bez
 
 ### Files You Can Modify / Pliki które możesz modyfikować
 
-| File / Plik | What / Co | How / Jak |
-|---|---|---|
-| `.env` | Model, channels, Memphis URL | Edit values, restart |
-| `src/gateway/loop.ts:13` | Default system prompt | Edit string, rebuild |
-| `src/channels/telegram.ts:20` | Bot display name | Change `'Soul'` to your name |
-| `src/channels/telegram.ts:78-88` | `/status` and `/recall` output | Customize status format |
-| `src/memory/client.ts` | Memory behavior | How conversations are stored/recalled |
-| `src/llm/ollama.ts` | Ollama timeout, parameters | Adjust timeout, temperature |
+| File / Plik                      | What / Co                      | How / Jak                             |
+| -------------------------------- | ------------------------------ | ------------------------------------- |
+| `.env`                           | Model, channels, Memphis URL   | Edit values, restart                  |
+| `src/gateway/loop.ts:13`         | Default system prompt          | Edit string, rebuild                  |
+| `src/channels/telegram.ts:20`    | Bot display name               | Change `'Soul'` to your name          |
+| `src/channels/telegram.ts:78-88` | `/status` and `/recall` output | Customize status format               |
+| `src/memory/client.ts`           | Memory behavior                | How conversations are stored/recalled |
+| `src/llm/ollama.ts`              | Ollama timeout, parameters     | Adjust timeout, temperature           |
 
 ### Environment Variables / Zmienne środowiskowe
 
@@ -319,21 +322,25 @@ When we first tested Soul on Telegram with `qwen3.5:2b`, here's what happened:
 Gdy pierwszy raz testowaliśmy Soul na Telegramie z `qwen3.5:2b`, oto co się stało:
 
 **Small models (2b) behave unpredictably / Małe modele (2b) zachowują się nieprzewidywalnie:**
+
 - The model sometimes forgot its identity mid-conversation / Model czasem zapominał swoją tożsamość w trakcie rozmowy
 - It occasionally invented facts about what Memphis and OpenClaw are / Czasem wymyślał fakty o tym czym jest Memphis i OpenClaw
 - It switched languages randomly / Losowo przełączał języki
 
 **What helped / Co pomogło:**
+
 - A more detailed system prompt grounded the model better / Bardziej szczegółowy prompt systemowy lepiej uziemił model
 - Switching to a 7b+ model dramatically improved consistency / Przejście na model 7b+ dramatycznie poprawiło spójność
 - Memory recall gave the model real context to work with / Recall pamięci dał modelowi prawdziwy kontekst
 
 **Commands that work well / Komendy które działają dobrze:**
+
 - `/status` — quick system check / szybki check systemu
 - `/recall` — see what's in memory / zobacz co jest w pamięci
 - Regular conversation — the core experience / zwykła rozmowa — główne doświadczenie
 
 **Tips / Wskazówki:**
+
 - Start with a rich system prompt if using small models / Zacznij od bogatego promptu systemowego przy małych modelach
 - Bigger models need less hand-holding in the prompt / Większe modele potrzebują mniej prowadzenia w promptie
 - Test with `/recall` to verify memory is actually storing / Testuj `/recall` żeby zweryfikować czy pamięć faktycznie zapisuje
@@ -347,6 +354,7 @@ Gdy pierwszy raz testowaliśmy Soul na Telegramie z `qwen3.5:2b`, oto co się st
 
 **Tool calling / Wywoływanie narzędzi:**
 Currently Soul responds only with text. Future versions could add tools:
+
 - Read local files / Czytanie lokalnych plików
 - Execute safe commands / Wykonywanie bezpiecznych komend
 - Check weather, calendar / Sprawdzanie pogody, kalendarza
@@ -366,6 +374,7 @@ Modify `src/memory/client.ts` to change how memories are stored and recalled —
 ### Contributing / Wkład
 
 The Memphis ecosystem is open source. If you build something cool:
+
 - OpenClaw gateway: https://github.com/Memphis-Chains/MemphisOS-OpenClaw
 - Memphis core: https://github.com/Memphis-Chains/memphis
 - MemphisOS control plane: https://github.com/Memphis-Chains/MemphisOS

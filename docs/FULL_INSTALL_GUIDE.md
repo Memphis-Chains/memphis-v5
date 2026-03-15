@@ -69,14 +69,14 @@
 
 ## 2. System Requirements / Wymagania systemowe
 
-| Component / Komponent | Minimum | Recommended / Zalecane |
-|---|---|---|
-| OS | Linux (Ubuntu 22.04+), macOS 13+, WSL2 | Ubuntu 24.04 LTS |
-| RAM | 4 GB | 16 GB+ (for local LLM) |
-| Disk / Dysk | 5 GB | 50 GB+ (for model weights) |
-| CPU | x86_64 or ARM64 | 4+ cores |
-| GPU (optional) | — | NVIDIA with CUDA (for fast local LLM) |
-| Network / Sieć | Required for install | Optional after install (local-first) |
+| Component / Komponent | Minimum                                | Recommended / Zalecane                |
+| --------------------- | -------------------------------------- | ------------------------------------- |
+| OS                    | Linux (Ubuntu 22.04+), macOS 13+, WSL2 | Ubuntu 24.04 LTS                      |
+| RAM                   | 4 GB                                   | 16 GB+ (for local LLM)                |
+| Disk / Dysk           | 5 GB                                   | 50 GB+ (for model weights)            |
+| CPU                   | x86_64 or ARM64                        | 4+ cores                              |
+| GPU (optional)        | —                                      | NVIDIA with CUDA (for fast local LLM) |
+| Network / Sieć        | Required for install                   | Optional after install (local-first)  |
 
 ---
 
@@ -85,22 +85,26 @@
 ### 3.1 git + curl
 
 **Ubuntu / Debian:**
+
 ```bash
 sudo apt update && sudo apt install -y git curl build-essential
 ```
 
 **Fedora / RHEL:**
+
 ```bash
 sudo dnf install -y git curl gcc gcc-c++ make
 ```
 
 **macOS:**
+
 ```bash
 xcode-select --install
 brew install git curl
 ```
 
 **Verify / Sprawdź:**
+
 ```bash
 git --version    # >= 2.30
 curl --version   # any recent version
@@ -115,6 +119,7 @@ curl --version   # any recent version
 **PL:** Memphis wymaga Node.js 22 lub nowszego. Skrypt instalacyjny prosi o v24, ale v22 działa ze wszystkimi komponentami.
 
 **Ubuntu / Debian:**
+
 ```bash
 # Option A: NodeSource (recommended / zalecane)
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
@@ -129,11 +134,13 @@ nvm use 22
 ```
 
 **macOS:**
+
 ```bash
 brew install node@22
 ```
 
 **Verify / Sprawdź:**
+
 ```bash
 node --version   # v22.x.x or higher / lub wyższe
 npm --version    # 10.x or higher / lub wyższe
@@ -148,12 +155,14 @@ npm --version    # 10.x or higher / lub wyższe
 **PL:** Rdzeń Rust kompiluje prymitywy kryptograficzne (podpisy Ed25519, łańcuchy SHA-256, szyfrowany vault). Zainstaluj stabilny toolchain.
 
 **All platforms / Wszystkie platformy:**
+
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source "$HOME/.cargo/env"
 ```
 
 **Verify / Sprawdź:**
+
 ```bash
 rustc --version   # rustc 1.80+ (stable)
 cargo --version   # cargo 1.80+
@@ -161,6 +170,7 @@ cargo --version   # cargo 1.80+
 
 > **Tip / Wskazówka:** If you already have Rust nightly, switch to stable:
 > Jeśli masz już Rust nightly, przełącz na stable:
+>
 > ```bash
 > rustup default stable
 > ```
@@ -174,11 +184,13 @@ cargo --version   # cargo 1.80+
 **PL:** Ollama zapewnia lokalne wnioskowanie AI bez wysyłania danych do chmury. Jest domyślnym dostawcą zarówno dla embeddingów MemphisOS, jak i rozmów OpenClaw.
 
 **Install / Instalacja:**
+
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 ```
 
 **Pull required models / Pobierz wymagane modele:**
+
 ```bash
 # Embedding model (required for Memphis memory search)
 # Model embeddingów (wymagany do przeszukiwania pamięci Memphis)
@@ -199,12 +211,14 @@ ollama pull qwen3.5:2b       # Light — 2 GB RAM, fast, good for testing
 ```
 
 **Verify / Sprawdź:**
+
 ```bash
 ollama --version              # 0.5+
 ollama list                   # should show pulled models / powinno pokazać pobrane modele
 ```
 
 **NVIDIA GPU users / Użytkownicy GPU NVIDIA:**
+
 ```bash
 # Ollama auto-detects CUDA. Verify GPU is used:
 # Ollama automatycznie wykrywa CUDA. Sprawdź czy GPU jest używane:
@@ -264,6 +278,7 @@ npm run build
 ```
 
 **What happens / Co się dzieje:**
+
 1. `cargo build` compiles Rust crates (memphis-core, memphis-vault, memphis-embed, memphis-napi)
 2. NAPI bridge generates `memphis-napi.node` binary
 3. TypeScript compiles to `dist/`
@@ -306,6 +321,7 @@ npm run -s cli -- doctor --json
 ```
 
 **Expected output / Oczekiwany wynik:**
+
 ```json
 {
   "status": "ok",
@@ -324,6 +340,7 @@ npm run dev
 **PL:** Memphis działa teraz na `http://127.0.0.1:3000`. Zostaw ten terminal otwarty. Otwórz nowy terminal do następnych kroków.
 
 **Verify the server is responding / Sprawdź czy serwer odpowiada:**
+
 ```bash
 curl -s http://127.0.0.1:3000/health | head -1
 ```
@@ -536,6 +553,7 @@ npm run dev
 ```
 
 **Expected output / Oczekiwany wynik:**
+
 ```
 [info] OpenClaw gateway starting...
 [info] LLM provider: ollama (qwen3.5:2b)
@@ -663,22 +681,22 @@ docker run -d \
 
 ### Build fails / Kompilacja się nie udaje
 
-| Problem | Solution / Rozwiązanie |
-|---|---|
-| `npm ci` fails | Check Node.js version: `node --version` (need 22+). Sprawdź wersję Node.js. |
-| Rust build fails | Run `rustup default stable && rustup update`. Uruchom `rustup default stable && rustup update`. |
-| NAPI link error | Delete `node_modules/` and run `npm install && npm run build` again. Usuń `node_modules/` i uruchom ponownie. |
-| `cc` not found | Install build tools: `sudo apt install build-essential`. Zainstaluj narzędzia kompilacji. |
+| Problem          | Solution / Rozwiązanie                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------- |
+| `npm ci` fails   | Check Node.js version: `node --version` (need 22+). Sprawdź wersję Node.js.                                   |
+| Rust build fails | Run `rustup default stable && rustup update`. Uruchom `rustup default stable && rustup update`.               |
+| NAPI link error  | Delete `node_modules/` and run `npm install && npm run build` again. Usuń `node_modules/` i uruchom ponownie. |
+| `cc` not found   | Install build tools: `sudo apt install build-essential`. Zainstaluj narzędzia kompilacji.                     |
 
 ### Runtime errors / Błędy runtime
 
-| Problem | Solution / Rozwiązanie |
-|---|---|
-| Port 3000 in use | Change PORT in `.env` or stop the other process: `lsof -i :3000`. Zmień PORT w `.env` lub zatrzymaj inny proces. |
-| Ollama connection refused | Start Ollama: `ollama serve` (or `systemctl start ollama`). Uruchom Ollama. |
-| Memphis memory not connecting | Check MEMPHIS_API_URL in OpenClaw `.env`. Verify Memphis is running: `curl http://localhost:3000/health`. |
-| `model not found` | Pull the model: `ollama pull qwen3.5:2b`. Pobierz model. |
-| Telegram bot not responding | Check TELEGRAM_BOT_TOKEN in `.env`. Only one process can use a bot token. Sprawdź token. |
+| Problem                       | Solution / Rozwiązanie                                                                                           |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Port 3000 in use              | Change PORT in `.env` or stop the other process: `lsof -i :3000`. Zmień PORT w `.env` lub zatrzymaj inny proces. |
+| Ollama connection refused     | Start Ollama: `ollama serve` (or `systemctl start ollama`). Uruchom Ollama.                                      |
+| Memphis memory not connecting | Check MEMPHIS_API_URL in OpenClaw `.env`. Verify Memphis is running: `curl http://localhost:3000/health`.        |
+| `model not found`             | Pull the model: `ollama pull qwen3.5:2b`. Pobierz model.                                                         |
+| Telegram bot not responding   | Check TELEGRAM_BOT_TOKEN in `.env`. Only one process can use a bot token. Sprawdź token.                         |
 
 ### Diagnostic commands / Komendy diagnostyczne
 
@@ -756,17 +774,17 @@ pkill -f "tsx.*index.ts"    # stops all dev servers / zatrzymuje wszystkie serwe
 
 ### Useful paths / Przydatne ścieżki
 
-| What / Co | Path / Ścieżka |
-|---|---|
-| Memphis data | `~/memphis/data/` |
-| MemphisOS data | `~/MemphisOS/data/` |
-| Ollama models | `~/.ollama/models/` |
-| Memphis config | `~/memphis/.env` |
-| MemphisOS config | `~/MemphisOS/.env` |
-| OpenClaw config | `~/openclaw/.env` |
-| Vault secrets | `~/MemphisOS/data/vault-entries.json` |
-| Chain data | `~/memphis/data/chains/` |
-| SQLite DB | `~/memphis/data/memphis-v5.db` |
+| What / Co        | Path / Ścieżka                        |
+| ---------------- | ------------------------------------- |
+| Memphis data     | `~/memphis/data/`                     |
+| MemphisOS data   | `~/MemphisOS/data/`                   |
+| Ollama models    | `~/.ollama/models/`                   |
+| Memphis config   | `~/memphis/.env`                      |
+| MemphisOS config | `~/MemphisOS/.env`                    |
+| OpenClaw config  | `~/openclaw/.env`                     |
+| Vault secrets    | `~/MemphisOS/data/vault-entries.json` |
+| Chain data       | `~/memphis/data/chains/`              |
+| SQLite DB        | `~/memphis/data/memphis-v5.db`        |
 
 ---
 
