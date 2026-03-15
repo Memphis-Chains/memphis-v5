@@ -1045,6 +1045,12 @@ export function validateManagedAppManifestFile(pathValue: string): ManagedAppVal
   const resolved = resolve(pathValue);
   try {
     const ref = loadFileManifest(pathValue);
+
+    // Validate all steps in all actions against the step validator
+    for (const [actionName, action] of Object.entries(ref.manifest.actions)) {
+      enforceManifestSteps(action.steps, { manifestId: ref.manifest.id, action: actionName });
+    }
+
     return { ok: true, ref };
   } catch (error) {
     const detail = error instanceof Error ? error.message : 'unknown manifest parse error';

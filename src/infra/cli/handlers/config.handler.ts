@@ -1,6 +1,7 @@
 import type { CommandHandler } from './command-handler.js';
 import { loadConfig } from '../../config/env.js';
 import { createSqliteClient, runMigrations } from '../../storage/sqlite/client.js';
+import { SqliteToolCallApprovalRepository } from '../../storage/sqlite/repositories/tool-call-approval-repository.js';
 import {
   SqliteToolPermissionRepository,
   type ToolPolicy,
@@ -9,11 +10,19 @@ import type { CliContext } from '../context.js';
 
 const VALID_POLICIES: ToolPolicy[] = ['allow', 'deny', 'require-approval'];
 
-function getToolRepo(): SqliteToolPermissionRepository {
+function getDb() {
   const config = loadConfig();
   const db = createSqliteClient(config.DATABASE_URL);
   runMigrations(db);
-  return new SqliteToolPermissionRepository(db);
+  return db;
+}
+
+function getToolRepo(): SqliteToolPermissionRepository {
+  return new SqliteToolPermissionRepository(getDb());
+}
+
+function getApprovalRepo(): SqliteToolCallApprovalRepository {
+  return new SqliteToolCallApprovalRepository(getDb());
 }
 
 async function handleToolsList(context: CliContext): Promise<boolean> {
@@ -53,7 +62,7 @@ async function handleToolsAllow(context: CliContext): Promise<boolean> {
   if (context.args.json) {
     console.log(JSON.stringify(result));
   } else {
-    console.log(`✓ Tool '${toolName}' set to: allow`);
+    console.log(`Tool '${toolName}' set to: allow`);
   }
   return true;
 }
@@ -69,7 +78,7 @@ async function handleToolsDeny(context: CliContext): Promise<boolean> {
   if (context.args.json) {
     console.log(JSON.stringify(result));
   } else {
-    console.log(`✗ Tool '${toolName}' set to: deny`);
+    console.log(`Tool '${toolName}' set to: deny`);
   }
   return true;
 }
@@ -124,6 +133,77 @@ async function handleToolsCheck(context: CliContext): Promise<boolean> {
   return true;
 }
 
+async function handleToolsPending(context: CliContext): Promise<boolean> {
+  const repo = getApprovalRepo();
+  repo.expirePending();
+  const pending = repo.listPending();
+
+  if (context.args.json) {
+    console.log(JSON.stringify({ pending }, null, 2));
+    return true;
+  }
+
+  if (pending.length === 0) {
+    console.log('No pending tool call approvals.');
+    return true;
+  }
+
+  console.log('Pending Tool Call Approvals:');
+  console.log('─'.repeat(80));
+  for (const p of pending) {
+    const args = p.argumentsJson.length > 60 ? p.argumentsJson.slice(0, 57) + '...' : p.argumentsJson;
+    const expires = new Date(p.expiresAtMs).toLocaleTimeString();
+    console.log(`  ${p.requestId}`);
+    console.log(`    tool: ${p.toolName}  caller: ${p.callerId}  expires: ${expires}`);
+    console.log(`    args: ${args}`);
+    console.log();
+  }
+  console.log(`${String(pending.length)} pending request(s).`);
+  console.log('Approve: memphis config tools approve-call <request-id>');
+  console.log('Deny:    memphis config tools deny-call <request-id>');
+  return true;
+}
+
+async function handleToolsApproveCall(context: CliContext): Promise<boolean> {
+  const requestId = context.args.target;
+  if (!requestId) {
+    console.error('Usage: memphis config tools approve-call <request-id>');
+    return true;
+  }
+  const repo = getApprovalRepo();
+  try {
+    const result = repo.approve(requestId);
+    if (context.args.json) {
+      console.log(JSON.stringify(result));
+    } else {
+      console.log(`Approved tool call: ${result.toolName} (${requestId})`);
+    }
+  } catch (err) {
+    console.error(`Failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  return true;
+}
+
+async function handleToolsDenyCall(context: CliContext): Promise<boolean> {
+  const requestId = context.args.target;
+  if (!requestId) {
+    console.error('Usage: memphis config tools deny-call <request-id>');
+    return true;
+  }
+  const repo = getApprovalRepo();
+  try {
+    const result = repo.deny(requestId);
+    if (context.args.json) {
+      console.log(JSON.stringify(result));
+    } else {
+      console.log(`Denied tool call: ${result.toolName} (${requestId})`);
+    }
+  } catch (err) {
+    console.error(`Failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  return true;
+}
+
 export const configCommandHandler: CommandHandler = {
   name: 'config',
   commands: ['config'],
@@ -134,7 +214,9 @@ export const configCommandHandler: CommandHandler = {
     const sub = context.args.subcommand;
 
     if (sub !== 'tools') {
-      console.error('Usage: memphis config tools <list|allow|deny|set|check|reset> [tool-name]');
+      console.error(
+        'Usage: memphis config tools <list|allow|deny|set|check|reset|pending|approve-call|deny-call> [tool-name]',
+      );
       return true;
     }
 
@@ -161,8 +243,16 @@ export const configCommandHandler: CommandHandler = {
         return handleToolsCheck(adjusted);
       case 'reset':
         return handleToolsReset(context);
+      case 'pending':
+        return handleToolsPending(context);
+      case 'approve-call':
+        return handleToolsApproveCall(adjusted);
+      case 'deny-call':
+        return handleToolsDenyCall(adjusted);
       default:
-        console.error('Usage: memphis config tools <list|allow|deny|set|check|reset> [tool-name]');
+        console.error(
+          'Usage: memphis config tools <list|allow|deny|set|check|reset|pending|approve-call|deny-call> [tool-name]',
+        );
         return true;
     }
   },
